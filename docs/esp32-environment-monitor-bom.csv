@@ -1,7 +1,7 @@
-Label(s);Amount;Part Type;mn;mpn;part number
-M1;1;BME280;;;;
-U1;1;ESP32S-HiLetgo;;;ESP32S-HiLetgo
-Part1;1;LCD1602-I2C;;;;
-J1;1;Piezo Speaker;;;;
-YwRobot Power Supply1;1;YwRobot Breadboard Power Supply;;;545043
-A1;1;gy-sgp30;;;;
+Name,Quantity,Component
+"M1",1,"BME280"
+"U1",1,"ESP32S-HiLetgo"
+"Part1",1,"LCD1602-I2C"
+"J1",1,"Piezo Speaker"
+"YwRobot Power Supply1",1,"YwRobot Breadboard Power Supply"
+"A1",1,"gy-sgp30"
