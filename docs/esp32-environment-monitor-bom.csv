@@ -1,15 +1,7 @@
-Label;Part Type;mn;mpn;part number;
-A1;gy-sgp30;;;;
-J1;Piezo Speaker;;;;
-M1;BME280;;;;
-Part1;LCD1602-I2C;;;;
-U1;ESP32S-HiLetgo;;;ESP32S-HiLetgo;
-YwRobot Power Supply1;YwRobot Breadboard Power Supply;;;545043;
-
-Amount;Part Type;mn;mpn;part number;
-1;BME280;;;;
-1;ESP32S-HiLetgo;;;ESP32S-HiLetgo;
-1;LCD1602-I2C;;;;
-1;Piezo Speaker;;;;
-1;YwRobot Breadboard Power Supply;;;545043;
-1;gy-sgp30;;;;
+Label(s);Amount;Part Type;mn;mpn;part number
+M1;1;BME280;;;;
+U1;1;ESP32S-HiLetgo;;;ESP32S-HiLetgo
+Part1;1;LCD1602-I2C;;;;
+J1;1;Piezo Speaker;;;;
+YwRobot Power Supply1;1;YwRobot Breadboard Power Supply;;;545043
+A1;1;gy-sgp30;;;;
