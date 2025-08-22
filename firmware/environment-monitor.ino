@@ -100,9 +100,44 @@ void loop() {
     Serial.print("eCO2: "); Serial.print(sgp.eCO2); Serial.print(" ppm, ");
     Serial.print("TVOC: "); Serial.println(sgp.TVOC);
 
+    // weather forecast
+    String forecast;
+    static float lastPressure = 0;
+
+    if (lastPressure == 0) {
+      lastPressure = pressure; // only on first run
+    }
+
+    if (pressure > 1020) {
+      forecast = "Sunny";
+    } else if (pressure < 1000) {
+      forecast = "Rainy";
+    } else {
+      forecast = "Cloudy";
+    }
+
+    // trend detection
+    if (pressure < lastPressure - 1) {
+      forecast += " falling";   // falling pressure
+    } else if (pressure > lastPressure + 1) {
+      forecast += " rising";   // rising pressure
+    }
+
+    lastPressure = pressure;  // store for next loop
+
+    // air quality
+    String air_quality;
+    if (sgp.eCO2 < 800) {
+      air_quality = "Good";
+    } else if (sgp.eCO2 < 1200) {
+      air_quality = "Moderate";
+    } else {
+      air_quality = "Poor";
+    }
+
     // print to lcd screen
     if (millis() - lastSwitch > 5000) {
-      displayPage = (displayPage + 1) % 3; // 3 pages rotating
+      displayPage = (displayPage + 1) % 5; // 5 pages rotating
       lastSwitch = millis();
 
       lcd.clear();
@@ -131,6 +166,13 @@ void loop() {
       }
       else if (displayPage == 2) {
         lcd.setCursor(0, 0);
+        lcd.print("Forecast:");
+
+        lcd.setCursor(0, 1);
+        lcd.print(forecast);
+      }
+      else if (displayPage == 3) {
+        lcd.setCursor(0, 0);
         lcd.print("eCO2: ");
         lcd.print(sgp.eCO2);
         lcd.print("ppm");
@@ -139,6 +181,12 @@ void loop() {
         lcd.print("TVOC: ");
         lcd.print(sgp.TVOC);
         lcd.print("ppb");
+      }
+      else if (displayPage == 4) {
+        lcd.setCursor(0, 0);
+        lcd.print("Air Quality: ");
+        lcd.setCursor(0, 1);
+        lcd.print(air_quality);
       }
     }
 
