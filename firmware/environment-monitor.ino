@@ -4,6 +4,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 #include <Preferences.h>
+#include <LiquidCrystal_I2C.h>
 
 #define SEALEVELPRESSURE_HPA (1013.25)
 
@@ -19,6 +20,12 @@ unsigned long lastBaselineSave = 0;
 Adafruit_BME280 bme;  // BME280 object
 Adafruit_SGP30 sgp;   // SGP30 object
 
+// create display object
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+unsigned long lastSwitch = 0;
+int displayPage = 0;
+
 // absolute humidity function
 uint32_t getAbsoluteHumidity(float temperature, float humidity) {
     const float absHumidity = 216.7f * ((humidity / 100.0f) * 6.112f * exp((17.62f * temperature) / (243.12f + temperature)) / (273.15f + temperature));
@@ -29,9 +36,16 @@ void setup() {
     Serial.begin(115200);
     while (!Serial) { delay(10); }
 
+    // setup lcd
+    lcd.init();
+    lcd.backlight();
+
+    lcd.setCursor(0, 0);
+    lcd.print("Initializing...");
+
     Wire.begin(SDA_PIN, SCL_PIN);
 
-    if (!bme.begin(0x76)) {
+    if (!bme.begin(0x77)) {
         Serial.println("BME280 not found!");
         while (1) delay(10);
     }
@@ -85,6 +99,48 @@ void loop() {
 
     Serial.print("eCO2: "); Serial.print(sgp.eCO2); Serial.print(" ppm, ");
     Serial.print("TVOC: "); Serial.println(sgp.TVOC);
+
+    // print to lcd screen
+    if (millis() - lastSwitch > 5000) {
+      displayPage = (displayPage + 1) % 3; // 3 pages rotating
+      lastSwitch = millis();
+
+      lcd.clear();
+
+      if (displayPage == 0) {
+        lcd.setCursor(0, 0);
+        lcd.print("Temp: ");
+        lcd.print(temperature, 1);
+        lcd.print("C");
+
+        lcd.setCursor(0, 1);
+        lcd.print("Hum: ");
+        lcd.print(humidity, 1);
+        lcd.print("%");
+      }
+      else if (displayPage == 1) {
+        lcd.setCursor(0, 0);
+        lcd.print("Press: ");
+        lcd.print(pressure, 0);
+        lcd.print("hPa");
+
+        lcd.setCursor(0, 1);
+        lcd.print("Alt: ");
+        lcd.print(altitude, 0);
+        lcd.print("m");
+      }
+      else if (displayPage == 2) {
+        lcd.setCursor(0, 0);
+        lcd.print("eCO2: ");
+        lcd.print(sgp.eCO2);
+        lcd.print("ppm");
+
+        lcd.setCursor(0, 1);
+        lcd.print("TVOC: ");
+        lcd.print(sgp.TVOC);
+        lcd.print("ppb");
+      }
+    }
 
     // Save baseline every 5 hours
     if (millis() - lastBaselineSave > 5UL * 3600000UL) { // 5 hours
