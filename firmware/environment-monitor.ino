@@ -7,10 +7,16 @@
 #include <LiquidCrystal_I2C.h>
 
 #define SEALEVELPRESSURE_HPA (1013.25)
+#define BUZZER_PIN 19
 
 // I2C pins for ESP32
 #define SDA_PIN 21
 #define SCL_PIN 22
+
+// buzzer control
+bool buzzerOn = false;
+unsigned long buzzerStartTime = 0;
+bool alreadyBeeped = false;
 
 // Preferences for storing baseline
 Preferences preferences;
@@ -34,7 +40,12 @@ uint32_t getAbsoluteHumidity(float temperature, float humidity) {
 
 void setup() {
     Serial.begin(115200);
-    while (!Serial) { delay(10); }
+    unsigned long serialTimeout = millis();
+    while (!Serial && (millis() - serialTimeout < 1000)) { delay(10); }
+
+    // setup buzzer
+    pinMode(BUZZER_PIN, OUTPUT);
+    digitalWrite(BUZZER_PIN, LOW);
 
     // setup lcd
     lcd.init();
@@ -129,11 +140,29 @@ void loop() {
     String air_quality;
     if (sgp.eCO2 < 800) {
       air_quality = "Good";
+      alreadyBeeped = false;
+      digitalWrite(BUZZER_PIN, LOW);
     } else if (sgp.eCO2 < 1200) {
       air_quality = "Moderate";
+      alreadyBeeped = false;
+      digitalWrite(BUZZER_PIN, LOW);
     } else {
       air_quality = "Poor";
+
+      if (!alreadyBeeped) {
+        digitalWrite(BUZZER_PIN, HIGH);
+        buzzerStartTime = millis();
+        buzzerOn = true;
+        alreadyBeeped = true;
+      }
     }
+
+    // turn buzzer off after 500 ms
+    if (buzzerOn && millis() - buzzerStartTime >= 500) {
+      digitalWrite(BUZZER_PIN, LOW);
+      buzzerOn = false;
+    }
+
 
     // print to lcd screen
     if (millis() - lastSwitch > 5000) {
