@@ -31,6 +31,10 @@ bool alreadyBeeped = false;
 Preferences preferences;
 unsigned long lastBaselineSave = 0;
 
+// Global variables for web display
+String forecast = "Unknown";
+String air_quality = "Unknown";
+
 // define sensor objects
 Adafruit_BME280 bme;  // BME280 object
 Adafruit_SGP30 sgp;   // SGP30 object
@@ -49,20 +53,82 @@ uint32_t getAbsoluteHumidity(float temperature, float humidity) {
 
 // ESP32 web server text
 void handleRoot() {
+  // Read current sensor values
+  float temp = bme.readTemperature();
+  float humidity = bme.readHumidity();
+  float pressure = bme.readPressure()/100.0F;
+
+  // Determine status for each sensor
+  String tempStatus = "good", tempText = "Good";
+  if (temp < 18 || temp > 28) { tempStatus = "warning"; tempText = "Moderate"; }
+  if (temp < 10 || temp > 35) { tempStatus = "bad"; tempText = "Poor"; }
+
+  String humidityStatus = "good", humidityText = "Good";
+  if (humidity < 30 || humidity > 70) { humidityStatus = "warning"; humidityText = "Moderate"; }
+  if (humidity < 20 || humidity > 80) { humidityStatus = "bad"; humidityText = "Poor"; }
+
+  String pressureStatus = "good", pressureText = "Good";
+  if (pressure < 1000 || pressure > 1025) { pressureStatus = "warning"; pressureText = "Moderate"; }
+  if (pressure < 980 || pressure > 1040) { pressureStatus = "bad"; pressureText = "Poor"; }
+
+  // Use eCO2 thresholds
+  String eco2Status = "good", eco2Text = "Good";
+  if (sgp.eCO2 >= 800 && sgp.eCO2 < 1200) {
+    eco2Status = "warning";
+    eco2Text = "Moderate";
+  }
+  if (sgp.eCO2 >= 1200) {
+    eco2Status = "bad";
+    eco2Text = "Poor";
+  }
+
+  String tvocStatus = "good", tvocText = "Good";
+  if (sgp.TVOC > 100) { tvocStatus = "warning"; tvocText = "Moderate"; }
+  if (sgp.TVOC > 300) { tvocStatus = "bad"; tvocText = "Poor"; }
+
   String html = "<!DOCTYPE html><html><head>";
   html += "<title>Environment Monitor</title>";
-  html += "<meta http-equiv='refresh' content='5'>";  // Auto-refresh
+  html += "<meta http-equiv='refresh' content='5'>";
+  html += "<style>";
+  html += "body { background-color: #2E5BBA; font-family: Arial, sans-serif; color: white; padding: 20px; }";
+  html += "h1 { text-align: center; margin-bottom: 30px; }";
+  html += "p { font-size: 18px; margin: 10px 0; padding: 10px; background-color: rgba(255, 255, 255, 0.1); border-radius: 5px; }";
+  html += ".chart { background-color: rgba(255, 255, 255, 0.1); margin: 20px 0; padding: 20px; border-radius: 5px; }";
+  html += ".chart h2 { text-align: center; margin-bottom: 20px; color: white; }";
+  html += ".bar { background-color: rgba(255, 255, 255, 0.3); margin: 15px 0; height: 40px; border-radius: 20px; position: relative; overflow: hidden; }";
+  html += ".bar-fill { height: 100%; border-radius: 20px; transition: width 0.5s ease; }";
+  html += ".bar-label { position: absolute; left: 15px; top: 10px; color: white; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }";
+  html += ".good { background-color: #4CAF50; }";
+  html += ".warning { background-color: #FF9800; }";
+  html += ".bad { background-color: #F44336; }";
+  html += ".status-text { position: absolute; right: 15px; top: 10px; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }";
+  html += "</style>";
   html += "</head><body>";
   html += "<h1>Environment Monitor</h1>";
-  html += "<p>Temperature: " + String(bme.readTemperature(), 1) + " °C</p>";
-  html += "<p>Humidity: " + String(bme.readHumidity(), 1) + " %</p>";
-  html += "<p>Pressure: " + String(bme.readPressure()/100.0F, 0) + " hPa</p>";
-  html += "<p>Weather Forecast: " + String(forecast)
+
+  // Current readings
+  html += "<p>Temperature: " + String(temp, 1) + " °C</p>";
+  html += "<p>Humidity: " + String(humidity, 1) + " %</p>";
+  html += "<p>Pressure: " + String(pressure, 0) + " hPa</p>";
+  html += "<p>Weather Forecast: " + String(forecast) + "</p>";
   html += "<p>eCO2: " + String(sgp.eCO2) + " ppm</p>";
   html += "<p>TVOC: " + String(sgp.TVOC) + " ppb</p>";
-  html += "<p>Air Quality: " + String(air_quality);
-  html += "</body></html>";
+  html += "<p>Air Quality: " + String(air_quality) + "</p>";
 
+  // Environmental chart with status colors
+  html += "<div class='chart'><h2>Environmental Data</h2>";
+  html += "<div class='bar'><div class='bar-fill " + tempStatus + "' style='width:" + String(temp*2) + "%'></div><div class='bar-label'>Temperature: " + String(temp, 1) + "°C</div><div class='status-text'>" + tempText + "</div></div>";
+  html += "<div class='bar'><div class='bar-fill " + humidityStatus + "' style='width:" + String(humidity) + "%'></div><div class='bar-label'>Humidity: " + String(humidity, 1) + "%</div><div class='status-text'>" + humidityText + "</div></div>";
+  html += "<div class='bar'><div class='bar-fill " + pressureStatus + "' style='width:" + String((pressure-950)*2) + "%'></div><div class='bar-label'>Pressure: " + String(pressure, 0) + " hPa</div><div class='status-text'>" + pressureText + "</div></div>";
+  html += "</div>";
+
+  // Air quality chart with status colors
+  html += "<div class='chart'><h2>Air Quality Data</h2>";
+  html += "<div class='bar'><div class='bar-fill " + eco2Status + "' style='width:" + String(sgp.eCO2/20) + "%'></div><div class='bar-label'>eCO2: " + String(sgp.eCO2) + " ppm</div><div class='status-text'>" + eco2Text + "</div></div>";
+  html += "<div class='bar'><div class='bar-fill " + tvocStatus + "' style='width:" + String(sgp.TVOC/4) + "%'></div><div class='bar-label'>TVOC: " + String(sgp.TVOC) + " ppb</div><div class='status-text'>" + tvocText + "</div></div>";
+  html += "</div>";
+
+  html += "</body></html>";
   server.send(200, "text/html", html);
 }
 
@@ -157,7 +223,6 @@ void loop() {
   Serial.print("TVOC: "); Serial.println(sgp.TVOC);
 
   // weather forecast
-  String forecast;
   static float lastPressure = 0;
 
   if (lastPressure == 0) {
@@ -182,7 +247,6 @@ void loop() {
   lastPressure = pressure;  // store for next loop
 
   // air quality
-  String air_quality;
   if (sgp.eCO2 < 800) {
     air_quality = "Good";
     alreadyBeeped = false;
@@ -211,7 +275,7 @@ void loop() {
 
   // print to lcd screen
   if (millis() - lastSwitch > 5000) {
-    displayPage = (displayPage + 1) % 5; // 5 pages rotating
+    displayPage = (displayPage + 1) % 6; // 6 pages rotating
     lastSwitch = millis();
 
     lcd.clear();
@@ -259,8 +323,16 @@ void loop() {
     else if (displayPage == 4) {
       lcd.setCursor(0, 0);
       lcd.print("Air Quality: ");
+
       lcd.setCursor(0, 1);
       lcd.print(air_quality);
+    }
+    else if (displayPage == 5) {
+      lcd.setCursor(0, 0);
+      lcd.print("Web page IP:");
+
+      lcd.setCursor(0, 1);
+      lcd.print(WiFi.localIP());
     }
   }
 
