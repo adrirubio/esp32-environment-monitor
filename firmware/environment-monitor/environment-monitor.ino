@@ -16,8 +16,8 @@
 #define SCL_PIN 22
 
 // WiFi credentials
-const char* ssid = "NETGEAR51";
-const char* password = "narrowballoon880";
+const char* ssid = "";
+const char* password = "";
 
 // Web server on port 80
 WebServer server(80);
