@@ -7,7 +7,7 @@ ESP32-based environment and air quality monitor
 Watch a quick preview below (GIF), or download the full demo video
 
 ### Preview (GIF)
-![ESP32 Environment Monitor](https://github.com/adrirubio/arduino-security-system/raw/main/my-build/demos/arduino-security-system-demo.gif)
+![ESP32 Environment Monitor](https://github.com/adrirubio/esp32-environment-monitor/raw/main/my-build/demos/esp32-environment-demo.gif)
 
 ### Full Video
-[Click here to download the full demo video (MP4)](https://github.com/adrirubio/arduino-security-system/raw/main/my-build/demos/arduino-security-system-demo.mp4)
+[Click here to download the full demo video (MP4)](https://github.com/adrirubio/esp32-environment-monitor/raw/main/my-build/demos/esp32-environment-demo.mp4)
