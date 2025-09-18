@@ -273,15 +273,15 @@ void loop() {
     buzzerOn = false;
   }
 
+// print to lcd screen
+if (millis() - lastSwitch > 5000) {
+  displayPage = (displayPage + 1) % 6; // 6 pages rotating
+  lastSwitch = millis();
 
-  // print to lcd screen
-  if (millis() - lastSwitch > 5000) {
-    displayPage = (displayPage + 1) % 6; // 6 pages rotating
-    lastSwitch = millis();
+  lcd.clear();
 
-    lcd.clear();
-
-    if (displayPage == 0) {
+  switch (displayPage) {
+    case 0:
       lcd.setCursor(0, 0);
       lcd.print("Temp: ");
       lcd.print(temperature, 1);
@@ -291,8 +291,9 @@ void loop() {
       lcd.print("Hum: ");
       lcd.print(humidity, 1);
       lcd.print("%");
-    }
-    else if (displayPage == 1) {
+      break;
+
+    case 1:
       lcd.setCursor(0, 0);
       lcd.print("Press: ");
       lcd.print(pressure, 0);
@@ -302,15 +303,17 @@ void loop() {
       lcd.print("Alt: ");
       lcd.print(altitude, 0);
       lcd.print("m");
-    }
-    else if (displayPage == 2) {
+      break;
+
+    case 2:
       lcd.setCursor(0, 0);
       lcd.print("Forecast:");
 
       lcd.setCursor(0, 1);
       lcd.print(forecast);
-    }
-    else if (displayPage == 3) {
+      break;
+
+    case 3:
       lcd.setCursor(0, 0);
       lcd.print("eCO2: ");
       lcd.print(sgp.eCO2);
@@ -320,22 +323,31 @@ void loop() {
       lcd.print("TVOC: ");
       lcd.print(sgp.TVOC);
       lcd.print("ppb");
-    }
-    else if (displayPage == 4) {
+      break;
+
+    case 4:
       lcd.setCursor(0, 0);
       lcd.print("Air Quality: ");
 
       lcd.setCursor(0, 1);
       lcd.print(air_quality);
-    }
-    else if (displayPage == 5) {
+      break;
+
+    case 5:
       lcd.setCursor(0, 0);
       lcd.print("Web page IP:");
 
       lcd.setCursor(0, 1);
       lcd.print(WiFi.localIP());
-    }
+
+      // Reset the LCD after showing IP
+      delay(2000);
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.backlight();
+      break;
   }
+}
 
   // Save baseline every 5 hours
   if (millis() - lastBaselineSave > 5UL * 3600000UL) { // 5 hours
